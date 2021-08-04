@@ -1,0 +1,50 @@
+library(plotly)
+library(dplyr)
+
+# Data available on kaggle
+bike <- read.csv("austin_bikeshare_trips.csv")
+station <- read.csv("austin_bikeshare_stations.csv")
+glimpse(bike)
+
+bike <- bike %>% 
+  left_join(station, by = c("start_station_id" = "station_id"))  %>% 
+  mutate(start_long = longitude,
+         start_lat = latitude) %>% 
+  select(-longitude, -latitude) %>% 
+  left_join(station, by = c("end_station_id" = "station_id")) %>% 
+  mutate(end_long = longitude,
+         end_lat = latitude,
+         route = paste(start_station_name, end_station_name, sep = "-")) 
+bike <- bike[sample(20000), ]
+
+fig <- plot_ly()  %>% 
+  add_segments(
+    data = bike,
+    x = ~start_long, 
+    xend = ~end_long,
+    y = ~start_lat,
+    yend = ~end_lat,
+    alpha = 0.08, 
+    size = I(0.8), 
+    text  = ~route, 
+    hoverinfo = "route", 
+    color = I("orange")
+  ) %>% 
+  add_markers(
+    data = station, 
+    x = ~longitude, 
+    y = ~latitude, 
+    text = ~name,
+    hoverinfo = "text", 
+    alpha = 0.8, 
+    color = I("green"), 
+    size = I(15)
+  ) %>% 
+  layout(
+    title = 'Most Used Routes in Austin Bike Share Rides',
+    showlegend = FALSE, 
+    xaxis = list(title = "Longitude"), 
+    yaxis = list(title = "Latitude")
+  )
+
+fig
